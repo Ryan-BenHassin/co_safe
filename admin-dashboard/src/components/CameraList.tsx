@@ -1,4 +1,4 @@
-import { Box, Heading, Text, Badge, Accordion, AccordionItem, AccordionButton, AccordionPanel, Switch, HStack, Button } from '@chakra-ui/react'
+import { Box, Heading, Text, Badge, Accordion, AccordionItem, AccordionButton, AccordionPanel, Switch, HStack, Button, SimpleGrid } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 
@@ -113,49 +113,66 @@ export default function CameraList({ onAddClick }: CameraListProps) {
           Add Camera
         </Button>
       </HStack>
-      <Accordion allowMultiple onChange={(expandedItems: number[]) => {
-        setOpenItems(expandedItems.map(index => cameras[index]?.id).filter(Boolean))
-      }}>
-        {cameras.map((camera, index) => (
-          <AccordionItem key={camera.id}>
-            <AccordionButton>
-              <Box flex="1" textAlign="left">
-                <HStack justify="space-between">
-                  <Box>
-                    <Text fontWeight="bold">{camera.name}</Text>
-                    <Badge mr={2}>{camera.type}</Badge>
-                    <Text fontSize="sm" color="gray.500">{camera.location}</Text>
-                  </Box>
-                  <Switch
-                    isChecked={camera.simulating}
-                    onChange={() => toggleSimulation(camera.id)}
-                    colorScheme="green"
-                  />
-                </HStack>
-              </Box>
-            </AccordionButton>
-            <AccordionPanel>
-              <HStack justify="space-between" mb={3}>
-                <Text fontSize="sm" fontWeight="bold">Camera Logs</Text>
-                <Button 
-                  size="xs" 
-                  colorScheme="red" 
-                  onClick={() => clearCameraLogs(camera.id)}
-                  isDisabled={!logs[camera.id]?.length}
-                >
-                  Clear Logs
-                </Button>
-              </HStack>
-              {logs[camera.id]?.map((log, index) => (
-                <Box key={index} p={2} borderBottomWidth="1px">
-                  <Text fontSize="sm">{new Date(log.timestamp).toLocaleString()}</Text>
-                  <Text>{log.event}: {log.result}</Text>
+      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4}>
+        {cameras.map((camera) => (
+          <Box key={camera.id} borderWidth="1px" borderRadius="lg" overflow="hidden">
+            <Box p={4} bg="white">
+              <HStack justify="space-between" mb={2}>
+                <Box>
+                  <Text fontWeight="bold">{camera.name}</Text>
+                  <Badge mr={2}>{camera.type}</Badge>
+                  <Text fontSize="sm" color="gray.500">{camera.location}</Text>
                 </Box>
-              ))}
-            </AccordionPanel>
-          </AccordionItem>
+                <Switch
+                  isChecked={camera.simulating}
+                  onChange={() => toggleSimulation(camera.id)}
+                  colorScheme="green"
+                />
+              </HStack>
+              <Accordion allowToggle>
+                <AccordionItem border="none">
+                  <AccordionButton 
+                    px={0}
+                    onClick={() => {
+                      if (!openItems.includes(camera.id)) {
+                        setOpenItems(prev => [...prev, camera.id]);
+                        fetchLogs(camera.id);
+                      } else {
+                        setOpenItems(prev => prev.filter(id => id !== camera.id));
+                      }
+                    }}
+                  >
+                    <Text fontSize="sm" fontWeight="medium">
+                      View Logs
+                    </Text>
+                  </AccordionButton>
+                  <AccordionPanel px={0}>
+                    <HStack justify="space-between" mb={3}>
+                      <Text fontSize="sm" fontWeight="bold">Camera Logs</Text>
+                      <Button 
+                        size="xs" 
+                        colorScheme="red" 
+                        onClick={() => clearCameraLogs(camera.id)}
+                        isDisabled={!logs[camera.id]?.length}
+                      >
+                        Clear Logs
+                      </Button>
+                    </HStack>
+                    <Box maxHeight="200px" overflowY="auto">
+                      {logs[camera.id]?.map((log, index) => (
+                        <Box key={index} p={2} borderBottomWidth="1px">
+                          <Text fontSize="sm">{new Date(log.timestamp).toLocaleString()}</Text>
+                          <Text>{log.event}: {log.result}</Text>
+                        </Box>
+                      ))}
+                    </Box>
+                  </AccordionPanel>
+                </AccordionItem>
+              </Accordion>
+            </Box>
+          </Box>
         ))}
-      </Accordion>
+      </SimpleGrid>
     </Box>
   )
 }

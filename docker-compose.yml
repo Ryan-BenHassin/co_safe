@@ -15,7 +15,7 @@ services:
       context: .
       dockerfile: cobot_service/Dockerfile
     ports:
-      # - "5002:5001"
+      - "5002:5002"
     networks:
       - safety-net
 
@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: machine_service/Dockerfile
     ports:
-      # - "5003:5002"
+      - "5003:5002"
     networks:
       - safety-net
 
@@ -33,7 +33,21 @@ services:
       context: .
       dockerfile: ppe_service/Dockerfile
     ports:
-      # - "5004:5003"
+      - "5004:5003"
+    networks:
+      - safety-net
+
+  admin-dashboard:
+    build:
+      context: ./admin-dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_MAIN_SERVICE_URL=http://localhost:5001
+      - NEXT_PUBLIC_COBOT_SERVICE_URL=http://cobot-service:5002
+      - NEXT_PUBLIC_MACHINE_SERVICE_URL=http://machine-service:5002
+      - NEXT_PUBLIC_PPE_SERVICE_URL=http://ppe-service:5003
     networks:
       - safety-net
 

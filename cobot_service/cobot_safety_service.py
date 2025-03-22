@@ -1,10 +1,19 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import random
 
 app = FastAPI(
     title="Cobot Safety Service",
     description="Analyzes video streams for cobot safety violations"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 class FrameData(BaseModel):
@@ -25,6 +34,13 @@ async def analyze(frame: FrameData):
         "confidence": random.uniform(0.8, 1.0),
         "frame_id": frame.frame_id
     }
+
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint
+    """
+    return {"status": "healthy"}
 
 if __name__ == '__main__':
     import uvicorn

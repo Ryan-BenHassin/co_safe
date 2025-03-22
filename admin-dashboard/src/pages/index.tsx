@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Box, Grid, Heading, useDisclosure } from '@chakra-ui/react'
+import { Box, Grid, Heading, useDisclosure, Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react'
 import ServiceCard from '../components/ServiceCard'
 import Layout from '../components/Layout'
 import AlertsPanel from '../components/AlertsPanel'
 import CameraForm from '../components/CameraForm'
 import CameraList from '../components/CameraList'
+import Statistics from '../components/Statistics'
 
 const services = [
   {
@@ -45,10 +46,23 @@ export default function Dashboard() {
                         <ServiceCard key={service.name} {...service} />
                     ))}
                 </Grid>
-                <Grid templateColumns={["1fr"]} gap={6} mb={6}>
-                    <CameraList onAddClick={onOpen} />
-                </Grid>
-                <AlertsPanel />
+                <Tabs variant="enclosed" mb={6}>
+                    <TabList>
+                        <Tab>Monitoring</Tab>
+                        <Tab>Statistics</Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel>
+                            <Grid templateColumns={["1fr"]} gap={6}>
+                                <CameraList onAddClick={onOpen} />
+                            </Grid>
+                            <AlertsPanel />
+                        </TabPanel>
+                        <TabPanel>
+                            <Statistics />
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
                 <CameraForm 
                     isOpen={isOpen} 
                     onClose={onClose} 

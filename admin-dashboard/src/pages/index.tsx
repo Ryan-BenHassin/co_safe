@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Box, Grid, Heading } from '@chakra-ui/react'
+import { Box, Grid, Heading, useDisclosure } from '@chakra-ui/react'
 import ServiceCard from '../components/ServiceCard'
 import Layout from '../components/Layout'
 import AlertsPanel from '../components/AlertsPanel'
@@ -28,7 +28,13 @@ const services = [
 ]
 
 export default function Dashboard() {
+    const { isOpen, onOpen, onClose } = useDisclosure()
     const [refreshKey, setRefreshKey] = useState(0)
+
+    const handleCameraAdded = () => {
+        setRefreshKey(prev => prev + 1)
+        onClose()
+    }
 
     return (
         <Layout>
@@ -39,11 +45,15 @@ export default function Dashboard() {
                         <ServiceCard key={service.name} {...service} />
                     ))}
                 </Grid>
-                <Grid templateColumns={["1fr", "1fr", "2fr 1fr"]} gap={6} mb={6}>
-                    <CameraList />
-                    <CameraForm onCameraAdded={() => setRefreshKey(prev => prev + 1)} />
+                <Grid templateColumns={["1fr"]} gap={6} mb={6}>
+                    <CameraList onAddClick={onOpen} />
                 </Grid>
                 <AlertsPanel />
+                <CameraForm 
+                    isOpen={isOpen} 
+                    onClose={onClose} 
+                    onCameraAdded={handleCameraAdded} 
+                />
             </Box>
         </Layout>
     )

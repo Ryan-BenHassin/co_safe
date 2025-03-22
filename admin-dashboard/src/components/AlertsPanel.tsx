@@ -1,4 +1,4 @@
-import { Box, VStack, Text, Badge, Heading } from '@chakra-ui/react'
+import { Box, VStack, Text, Badge, Heading, Button, HStack } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 
@@ -27,9 +27,28 @@ export default function AlertsPanel() {
     return () => clearInterval(interval)
   }, [])
 
+  const clearAlerts = async () => {
+    try {
+      await axios.delete(`${process.env.NEXT_PUBLIC_MAIN_SERVICE_URL}/alerts`)
+      setAlerts([])
+    } catch (error) {
+      console.error('Failed to clear alerts:', error)
+    }
+  }
+
   return (
     <Box p={5} shadow="md" borderWidth="1px" borderRadius="lg" bg="white">
-      <Heading size="md" mb={4}>Safety Alerts</Heading>
+      <HStack justify="space-between" mb={4}>
+        <Heading size="md">Safety Alerts</Heading>
+        <Button 
+          size="sm" 
+          colorScheme="red" 
+          onClick={clearAlerts}
+          isDisabled={alerts.length === 0}
+        >
+          Clear All Alerts
+        </Button>
+      </HStack>
       <VStack align="stretch" spacing={3}>
         {alerts.map((alert, index) => (
           <Box key={index} p={3} borderWidth="1px" borderRadius="md">

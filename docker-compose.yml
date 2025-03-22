@@ -9,6 +9,8 @@ services:
       - "5001:5000"
     networks:
       - safety-net
+    depends_on:
+      - db
 
   cobot-service:
     build: 
@@ -44,12 +46,26 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_MAIN_SERVICE_URL=http://localhost:5001
+      - NEXT_PUBLIC_MAIN_SERVICE_URL=http://main-service:5000
       - NEXT_PUBLIC_COBOT_SERVICE_URL=http://cobot-service:5002
       - NEXT_PUBLIC_MACHINE_SERVICE_URL=http://machine-service:5002
       - NEXT_PUBLIC_PPE_SERVICE_URL=http://ppe-service:5003
     networks:
       - safety-net
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: safety_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - safety-net
+
+volumes:
+  postgres_data:
 
 networks:
   safety-net:

@@ -1,4 +1,4 @@
-import { Box, Heading, Text, Badge, Accordion, AccordionItem, AccordionButton, AccordionPanel, Switch, HStack } from '@chakra-ui/react'
+import { Box, Heading, Text, Badge, Accordion, AccordionItem, AccordionButton, AccordionPanel, Switch, HStack, Button } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 
@@ -17,14 +17,28 @@ interface Log {
   result: string
 }
 
-export default function CameraList() {
+interface CameraListProps {
+  onAddClick: () => void;
+}
+
+export default function CameraList({ onAddClick }: CameraListProps) {
   const [cameras, setCameras] = useState<Camera[]>([])
   const [logs, setLogs] = useState<Record<string, Log[]>>({})
+  const [openItems, setOpenItems] = useState<string[]>([])
 
   const fetchCameras = async () => {
     try {
       const response = await axios.get(`${process.env.NEXT_PUBLIC_MAIN_SERVICE_URL}/cameras`)
-      setCameras(response.data)
+      // Get simulation status for each camera
+      const camerasWithStatus = await Promise.all(
+        response.data.map(async (camera: Camera) => {
+          const simStatus = await axios.get(
+            `${process.env.NEXT_PUBLIC_MAIN_SERVICE_URL}/cameras/${camera.id}/simulation-status`
+          )
+          return { ...camera, simulating: simStatus.data.simulating }
+        })
+      )
+      setCameras(camerasWithStatus)
     } catch (error) {
       console.error('Failed to fetch cameras:', error)
     }
@@ -48,19 +62,63 @@ export default function CameraList() {
     }
   }
 
+  const clearCameraLogs = async (cameraId: string) => {
+    try {
+      await axios.delete(`${process.env.NEXT_PUBLIC_MAIN_SERVICE_URL}/cameras/${cameraId}/logs`)
+      setLogs(prev => ({...prev, [cameraId]: []}))
+    } catch (error) {
+      console.error(`Failed to clear logs for camera ${cameraId}:`, error)
+    }
+  }
+
   useEffect(() => {
     fetchCameras()
     const interval = setInterval(fetchCameras, 5000)
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    // Fetch logs for all open items
+    const fetchOpenLogs = async () => {
+      for (const cameraId of openItems) {
+        try {
+          const response = await axios.get(`${process.env.NEXT_PUBLIC_MAIN_SERVICE_URL}/cameras/${cameraId}/logs`)
+          setLogs(prev => ({...prev, [cameraId]: response.data}))
+        } catch (error) {
+          console.error(`Failed to fetch logs for camera ${cameraId}:`, error)
+        }
+      }
+    }
+
+    // Initial fetch and setup interval
+    fetchOpenLogs()
+    const logInterval = setInterval(fetchOpenLogs, 2000)  // Update logs every 2 seconds
+
+    return () => clearInterval(logInterval)
+  }, [openItems])
+
+  const handleAccordionChange = (cameraId: string) => {
+    setOpenItems(prev => 
+      prev.includes(cameraId) 
+        ? prev.filter(id => id !== cameraId)
+        : [...prev, cameraId]
+    )
+  }
+
   return (
     <Box p={5}>
-      <Heading size="md" mb={4}>Monitoring Cameras</Heading>
-      <Accordion allowMultiple>
-        {cameras.map(camera => (
+      <HStack justify="space-between" mb={4}>
+        <Heading size="md">Monitoring Cameras</Heading>
+        <Button colorScheme="blue" onClick={onAddClick}>
+          Add Camera
+        </Button>
+      </HStack>
+      <Accordion allowMultiple onChange={(expandedItems: number[]) => {
+        setOpenItems(expandedItems.map(index => cameras[index]?.id).filter(Boolean))
+      }}>
+        {cameras.map((camera, index) => (
           <AccordionItem key={camera.id}>
-            <AccordionButton onClick={() => fetchLogs(camera.id)}>
+            <AccordionButton>
               <Box flex="1" textAlign="left">
                 <HStack justify="space-between">
                   <Box>
@@ -77,6 +135,17 @@ export default function CameraList() {
               </Box>
             </AccordionButton>
             <AccordionPanel>
+              <HStack justify="space-between" mb={3}>
+                <Text fontSize="sm" fontWeight="bold">Camera Logs</Text>
+                <Button 
+                  size="xs" 
+                  colorScheme="red" 
+                  onClick={() => clearCameraLogs(camera.id)}
+                  isDisabled={!logs[camera.id]?.length}
+                >
+                  Clear Logs
+                </Button>
+              </HStack>
               {logs[camera.id]?.map((log, index) => (
                 <Box key={index} p={2} borderBottomWidth="1px">
                   <Text fontSize="sm">{new Date(log.timestamp).toLocaleString()}</Text>

@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+  main-service:
+    build: 
+      context: .
+      dockerfile: main_service/Dockerfile
+    ports:
+      - "5001:5000"
+    networks:
+      - safety-net
+
+  cobot-service:
+    build: 
+      context: .
+      dockerfile: cobot_service/Dockerfile
+    ports:
+      # - "5002:5001"
+    networks:
+      - safety-net
+
+  machine-service:
+    build: 
+      context: .
+      dockerfile: machine_service/Dockerfile
+    ports:
+      # - "5003:5002"
+    networks:
+      - safety-net
+
+  ppe-service:
+    build: 
+      context: .
+      dockerfile: ppe_service/Dockerfile
+    ports:
+      # - "5004:5003"
+    networks:
+      - safety-net
+
+networks:
+  safety-net:
+    driver: bridge
